@@ -1,0 +1,18 @@
+# Large datasets
+spotify_data.csv
+cleaned_music_data.csv
+music_data.csv
+
+# Large models
+knn_model.pkl
+music_data.pkl
+
+# Python ignores
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv/
+env/
+venv/
+.ipynb_checkpoints/
