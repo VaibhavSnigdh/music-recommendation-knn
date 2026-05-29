@@ -25,6 +25,14 @@ model, music_data, feature_columns = load_assets()
 # This creates a search box on the screen
 user_song = st.text_input("Search for a song:", placeholder="e.g., Shape of You")
 
+# Quick suggestion chips for a clean "student project" interaction
+st.write("💡 *Quick try one of these popular songs:*")
+suggestions = ["Badtameez Dil", "Tum Hi Ho", "Kabira"]
+cols = st.columns(len(suggestions))
+for idx, song in enumerate(suggestions):
+    if cols[idx].button(song, use_container_width=True):
+        user_song = song
+
 # ---- Recommendation Logic ----
 if user_song:
     st.write("---")
@@ -32,7 +40,12 @@ if user_song:
     all_song_names = music_data['track_name'].unique()
     matched_song, score = process.extractOne(user_song, all_song_names)
     
-    st.write(f"**Selected Song:** {matched_song} *(Match Score: {score}/100)*")
+    # Clean display for the selected song using Streamlit columns & metric
+    col_a, col_b = st.columns([3, 1])
+    with col_a:
+        st.markdown(f"**Selected Song:**\n### 🎵 {matched_song}")
+    with col_b:
+        st.metric(label="Fuzzy Match Score", value=f"{score}/100")
     
     if score < 60:
         st.warning("That song might not be in our database. Here is the closest match we found!")
@@ -62,11 +75,35 @@ if user_song:
     # 5. Display the results on the website nicely
     st.subheader("🔥 Top 5 Recommendations:")
     
-    # Display as a clean dataframe without the messy index numbers
-    st.dataframe(
-        recommendations.sort_values('similarity_score (%)', ascending=False),
-        hide_index=True,
-        use_container_width=True
-    )
+    recommendations_sorted = recommendations.sort_values('similarity_score (%)', ascending=False)
+    
+    # Display recommendations as clean rows with metrics
+    for idx, row in recommendations_sorted.iterrows():
+        col1, col2, col3 = st.columns([3, 1, 1])
+        with col1:
+            st.markdown(f"**{row['track_name']}**")
+            st.caption(f"👤 {row['artist_name']} | 🏷️ {row['genre'].title()}")
+        with col2:
+            # Popularity score is represented as a percentage out of 100
+            pop_percent = int(row['popularity'] * 100) if row['popularity'] <= 1 else int(row['popularity'])
+            st.metric(label="Popularity", value=f"{pop_percent}%")
+        with col3:
+            st.metric(label="Match Vibe", value=f"{row['similarity_score (%)']:.1f}%")
+        st.divider()
     
     st.success("Done! Feel free to search for another song.")
+
+# ---- About Section (Student Project Style) ----
+st.write("---")
+with st.expander("ℹ️ About This Project (How it Works)"):
+    st.markdown("""
+    This is a **K-Nearest Neighbors (KNN)** based music recommendation system.
+    
+    **How the model works:**
+    1. **Fuzzy Matching:** When you search a song, the system uses fuzzy string matching to find the closest match in our Bollywood database.
+    2. **Feature Extraction:** It retrieves the musical features of the selected song (acousticness, danceability, energy, loudness, tempo, popularity, etc.).
+    3. **KNN Search:** The KNN model measures the distance between the song's features and all other songs in the database.
+    4. **Recommendation:** The 5 closest songs with the shortest distance are recommended as sharing a similar vibe!
+    
+    *Built using Streamlit, Scikit-Learn, Pandas, and Joblib.*
+    """)
